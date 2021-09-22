@@ -4,7 +4,7 @@ use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeTuple};
 
 #[derive(Clone)]
 pub struct Col {
-    name: Box<String>,
+    name: String,
 }
 
 impl Col {
@@ -12,7 +12,7 @@ impl Col {
         let mut vec: Vec<Col> = vec!();
         for header in headers.iter() {
             vec.push(Col {
-                name: Box::new(String::from(header))
+                name: String::from(header)
             });
         }
         vec
@@ -20,20 +20,16 @@ impl Col {
 }
 
 pub struct Val {
-    col: Col,
     obj: String
 }
 
 impl Val<> {
-    pub fn new_vec(cols: &Vec<Col>, record: StringRecord) -> Vec<Val> {
+    pub fn new_vec(record: StringRecord) -> Vec<Val> {
         let mut vec: Vec<Val> = vec!();
-        let mut i = 0;
         for val in record.iter() {
            vec.push(Val {
-               col: cols.get(i).unwrap().to_owned(),
                obj: String::from(val),
            });
-           i += 1;
         }
         vec
     }
@@ -44,11 +40,11 @@ pub struct Row {
 }
 
 impl Row {
-    pub fn new_vec(cols: &Vec<Col>, mut reader: Reader<File>) -> Vec<Row> {
+    pub fn new_vec(mut reader: Reader<File>) -> Vec<Row> {
         let mut vec: Vec<Row> = vec!();
         for record in reader.records() {
             vec.push(Row {
-                vals: Val::new_vec(cols, record.unwrap())
+                vals: Val::new_vec(record.unwrap())
             });
         }
         vec
@@ -77,7 +73,7 @@ impl From<Reader<File>> for Tab {
     fn from(mut reader: Reader<File>) -> Self {
         let cols = Col::new_vec(reader.headers().unwrap());
         Tab {
-            rows: Row::new_vec(&cols, reader),
+            rows: Row::new_vec(reader),
             cols,
         }
     }
