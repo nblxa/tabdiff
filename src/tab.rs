@@ -2,6 +2,7 @@ use csv::{StringRecord, Reader};
 use std::fs::File;
 use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 use std::rc::Rc;
+use std::cmp::Ordering;
 
 #[derive(Clone)]
 pub struct Col {
@@ -20,6 +21,7 @@ impl Col {
     }
 }
 
+#[derive(PartialEq, PartialOrd, Eq, Ord)]
 pub struct Val {
     obj: String
 }
@@ -59,6 +61,7 @@ impl Row {
                 vals: Val::new_vec(record.unwrap())
             });
         }
+        vec.sort_unstable();
         vec
     }
 }
@@ -75,6 +78,26 @@ impl Serialize for Row {
         s.end()
     }
 }
+
+impl PartialOrd for Row {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        PartialOrd::partial_cmp(&self.vals, &other.vals)
+    }
+}
+
+impl Ord for Row {
+    fn cmp(&self, other: &Self) -> Ordering {
+        Ord::cmp(&self.vals, &other.vals)
+    }
+}
+
+impl PartialEq for Row {
+    fn eq(&self, other: &Self) -> bool {
+        self.vals == other.vals
+    }
+}
+
+impl Eq for Row {}
 
 pub struct Tab {
     pub cols: Rc<Vec<Col>>,
