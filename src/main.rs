@@ -15,7 +15,7 @@ impl fmt::Display for Line {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self.0 {
             None => write!(f, "    "),
-            Some(idx) => write!(f, "{:<4}", idx + 1),
+            Some(idx) => write!(f, "{:>4}", idx + 1),
         }
     }
 }
@@ -37,6 +37,9 @@ fn example() -> Result<(), Box<dyn Error>> {
     let tab = Tab::from(rdr);
     let right = serde_yaml::to_string(&tab)?;
 
+    println!("{}", left);
+    println!("{}", right);
+
     let diff = TextDiff::from_lines(&left, &right);
     console::set_colors_enabled(true);
 
@@ -47,9 +50,9 @@ fn example() -> Result<(), Box<dyn Error>> {
         for op in group {
             for change in diff.iter_inline_changes(op) {
                 let (sign, s) = match change.tag() {
-                    ChangeTag::Delete => ("-", Style::new().red()),
-                    ChangeTag::Insert => ("+", Style::new().green()),
-                    ChangeTag::Equal => (" ", Style::new().dim()),
+                    ChangeTag::Insert => ("<  ", Style::new().green()),
+                    ChangeTag::Delete => (" > ", Style::new().red()),
+                    ChangeTag::Equal => ("   ", Style::new().dim()),
                 };
                 print!(
                     "{}{} |{}",

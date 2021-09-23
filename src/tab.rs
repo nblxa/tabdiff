@@ -1,6 +1,7 @@
 use csv::{StringRecord, Reader};
 use std::fs::File;
-use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeTuple};
+use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct Col {
@@ -35,15 +36,26 @@ impl Val<> {
     }
 }
 
+impl Serialize for Val {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        serializer.serialize_str(self.obj.as_str())
+    }
+}
+
 pub struct Row {
+    cols: Rc<Vec<Col>>,
     vals: Vec<Val>,
 }
 
 impl Row {
-    pub fn new_vec(mut reader: Reader<File>) -> Vec<Row> {
+    pub fn new_vec(cols: &Rc<Vec<Col>>, mut reader: Reader<File>) -> Vec<Row> {
         let mut vec: Vec<Row> = vec!();
         for record in reader.records() {
             vec.push(Row {
+                cols: Rc::clone(cols),
                 vals: Val::new_vec(record.unwrap())
             });
         }
@@ -56,24 +68,24 @@ impl Serialize for Row {
         where
             S: Serializer,
     {
-        let mut s = serializer.serialize_tuple(self.vals.len())?;
-        for val in &self.vals {
-            s.serialize_element(val.obj.as_str())?;
+        let mut s = serializer.serialize_map(Some(self.vals.len()))?;
+        for (i, val) in self.vals.iter().enumerate() {
+            s.serialize_entry(&self.cols[i].name, &val)?;
         }
         s.end()
     }
 }
 
 pub struct Tab {
-    pub cols: Vec<Col>,
+    pub cols: Rc<Vec<Col>>,
     pub rows: Vec<Row>,
 }
 
 impl From<Reader<File>> for Tab {
     fn from(mut reader: Reader<File>) -> Self {
-        let cols = Col::new_vec(reader.headers().unwrap());
+        let cols: Rc<Vec<Col>> = Rc::from(Col::new_vec(reader.headers().unwrap()));
         Tab {
-            rows: Row::new_vec(reader),
+            rows: Row::new_vec(&cols, reader),
             cols,
         }
     }
