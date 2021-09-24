@@ -1,12 +1,10 @@
 use csv::{StringRecord, Reader};
 use std::fs::File;
-use serde::ser::{Serialize, Serializer, SerializeSeq, SerializeMap};
 use std::rc::Rc;
 use std::cmp::Ordering;
 
-#[derive(Clone)]
 pub struct Col {
-    name: String,
+    pub name: String,
 }
 
 impl Col {
@@ -23,7 +21,7 @@ impl Col {
 
 #[derive(PartialEq, PartialOrd, Eq, Ord)]
 pub struct Val {
-    obj: String
+    pub obj: String
 }
 
 impl Val<> {
@@ -38,44 +36,24 @@ impl Val<> {
     }
 }
 
-impl Serialize for Val {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        serializer.serialize_str(self.obj.as_str())
-    }
-}
-
 pub struct Row {
-    cols: Rc<Vec<Col>>,
-    vals: Vec<Val>,
+    pub cols: Rc<Vec<Col>>,
+    pub vals: Vec<Val>,
 }
 
 impl Row {
-    pub fn new_vec(cols: &Rc<Vec<Col>>, mut reader: Reader<File>) -> Vec<Row> {
-        let mut vec: Vec<Row> = vec!();
+    pub fn new_vec(cols: &Rc<Vec<Col>>, mut reader: Reader<File>) -> Vec<Rc<Box<Row>>> {
+        let mut vec: Vec<Rc<Box<Row>>> = vec!();
         for record in reader.records() {
-            vec.push(Row {
+            let r = Row {
                 cols: Rc::clone(cols),
                 vals: Val::new_vec(record.unwrap())
-            });
+            };
+            let rc = Rc::new(Box::new(r));
+            vec.push(rc);
         }
         vec.sort_unstable();
         vec
-    }
-}
-
-impl Serialize for Row {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        let mut s = serializer.serialize_map(Some(self.vals.len()))?;
-        for (i, val) in self.vals.iter().enumerate() {
-            s.serialize_entry(&self.cols[i].name, &val)?;
-        }
-        s.end()
     }
 }
 
@@ -101,7 +79,7 @@ impl Eq for Row {}
 
 pub struct Tab {
     pub cols: Rc<Vec<Col>>,
-    pub rows: Vec<Row>,
+    pub rows: Vec<Rc<Box<Row>>>,
 }
 
 impl From<Reader<File>> for Tab {
@@ -111,18 +89,5 @@ impl From<Reader<File>> for Tab {
             rows: Row::new_vec(&cols, reader),
             cols,
         }
-    }
-}
-
-impl Serialize for Tab {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-    {
-        let mut s = serializer.serialize_seq(Option::Some(self.rows.len()))?;
-        for row in &self.rows {
-            s.serialize_element(&row)?;
-        }
-        s.end()
     }
 }
