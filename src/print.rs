@@ -1,5 +1,10 @@
 use crate::diff::{Diff, SharedRow};
-use prettytable::{Table, Row, Cell};
+use prettytable::{Table, Row, Cell, format};
+
+#[cfg(windows)]
+const LINE_ENDING: &'static str = "\r\n";
+#[cfg(not(windows))]
+const LINE_ENDING: &'static str = "\n";
 
 pub fn diffs_as_table(diffs: Vec<Diff>, max_width: usize) -> Table {
     let mut vec = vec!();
@@ -7,27 +12,31 @@ pub fn diffs_as_table(diffs: Vec<Diff>, max_width: usize) -> Table {
         let left = diff.left()
             .map(|row| row_to_prettytable_rows(row))
             .or(diff.right()
-                .map(|other| row_to_empty(other.vals.len())))
+                .map(|_| Cell::default()))
             .unwrap();
         let right = diff.right()
             .map(|row| row_to_prettytable_rows(row))
             .or(diff.left()
-                .map(|other| row_to_empty(other.vals.len())))
+                .map(|_| Cell::default()))
             .unwrap();
         vec.push((left, right));
     }
     create_table(vec, max_width)
 }
 
-fn row_to_prettytable_rows(row: SharedRow) -> Vec<(Cell, Cell)> {
-    let mut vec = Vec::with_capacity(row.vals.len());
+fn row_to_prettytable_rows(row: SharedRow) -> Cell {
+    let mut cell_text = String::new();
+    let mut write_nl = false;
     for (i, val) in row.vals.iter().enumerate() {
-        vec.push((
-            Cell::new(row.cols[i].name.as_str()),
-            Cell::new(val.obj.as_str()),
-        ));
+        if write_nl {
+            cell_text.push_str(LINE_ENDING);
+        }
+        cell_text.push_str(row.cols[i].name.as_str());
+        cell_text.push_str(": ");
+        cell_text.push_str(val.obj.as_str());
+        write_nl = true;
     }
-    vec
+    Cell::new(cell_text.as_str())
 }
 
 fn row_to_empty(height: usize) -> Vec<(Cell, Cell)> {
@@ -41,14 +50,23 @@ fn row_to_empty(height: usize) -> Vec<(Cell, Cell)> {
     vec
 }
 
-fn create_table(vec: Vec<(Vec<(Cell, Cell)>, Vec<(Cell, Cell)>)>, max_width: usize) -> Table {
+fn create_table(vec: Vec<(Cell, Cell)>, max_width: usize) -> Table {
     let half_width = max_width / 2;
     let mut table = Table::new();
     for (left, right) in vec {
-        for i in 0 .. left.len() {
-            let row = Row::new(vec!(left[i].0.clone(), left[i].1.clone(), right[i].0.clone(), right[i].1.clone()));
-            table.add_row(row);
-        }
+        let row = Row::new(vec!(left.clone(), right.clone()));
+        table.add_row(row);
     }
+    table.set_format(format::FormatBuilder::new()
+        .column_separator('│')
+        .borders('│')
+        .separators(&[format::LinePosition::Top],
+                    format::LineSeparator::new('─', '┬', '┌', '┐'))
+        .separators(&[format::LinePosition::Intern],
+                    format::LineSeparator::new('─', '┼', '├', '┤'))
+        .separators(&[format::LinePosition::Bottom],
+                    format::LineSeparator::new('─', '┴', '└', '┘'))
+        .padding(1, 1)
+        .build());
     table
 }
