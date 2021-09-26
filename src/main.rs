@@ -9,7 +9,7 @@ use std::process::exit;
 use diff::Diff;
 
 fn example() -> Result<(), Box<dyn Error>> {
-    let args: Vec<_> = std::env::args_os().collect();
+    let args: Vec<_> = std::env::args().collect();
     if args.len() != 3 {
         eprintln!("usage: tabdiff [left] [right]");
         exit(1);
@@ -24,7 +24,12 @@ fn example() -> Result<(), Box<dyn Error>> {
     let right = Tab::from(rdr);
 
     let diffs = Diff::create_diffs(left, right);
-    let table = print::diffs_as_table(diffs, 120);
+    let mut table = prettytable::Table::new();
+    table.add_row(prettytable::Row::new(vec!(
+        prettytable::Cell::new(left_name.as_str()),
+        prettytable::Cell::new(right_name.as_str()),
+    )));
+    print::diffs_as_table(diffs, &mut table);
     table.printstd();
     Ok(())
 }

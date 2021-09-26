@@ -46,10 +46,10 @@ impl Diff {
         let sr = right.rows.len();
         let mut il: usize = 0;
         let mut ir: usize = 0;
-        let mut rl = &left.rows[il];
-        let mut rr = &right.rows[ir];
+        let mut rl;
+        let mut rr;
         let mut d: Diff;
-        let mut diffs: Vec<Diff> = vec!();
+        let mut diffs = vec!();
         while il < sl && ir < sr {
             rl = &left.rows[il];
             rr = &right.rows[ir];
