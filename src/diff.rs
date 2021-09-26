@@ -61,7 +61,7 @@ impl Diff {
                 d = Diff::new_left(rl.clone());
                 il += 1;
             } else { // if rl > rr
-                d = Diff::new_both(rl.clone(), rr.clone());
+                d = Diff::new_right(rr.clone());
                 ir += 1;
             }
             diffs.push(d);
