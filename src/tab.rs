@@ -5,14 +5,16 @@ use std::cmp::Ordering;
 
 pub struct Col {
     pub name: String,
+    pub key: bool,
 }
 
 impl Col {
-    pub fn new_vec(headers: &StringRecord) -> Vec<Col> {
+    pub fn new_vec(headers: &StringRecord, keys: &Vec<String>) -> Vec<Col> {
         let mut vec: Vec<Col> = vec!();
         for header in headers.iter() {
             vec.push(Col {
-                name: String::from(header)
+                name: String::from(header),
+                key: keys.contains(&String::from(header)),
             });
         }
         vec
@@ -55,6 +57,16 @@ impl Row {
         vec.sort_unstable();
         vec
     }
+
+    pub fn keys(&self) -> Vec<&Val> {
+        let mut vec = vec!();
+        for (i, val) in self.vals.iter().enumerate() {
+            if self.cols[i].key {
+                vec.push(val);
+            }
+        }
+        vec
+    }
 }
 
 impl PartialOrd for Row {
@@ -82,9 +94,19 @@ pub struct Tab {
     pub rows: Vec<Rc<Box<Row>>>,
 }
 
-impl From<Reader<File>> for Tab {
-    fn from(mut reader: Reader<File>) -> Self {
-        let cols: Rc<Vec<Col>> = Rc::from(Col::new_vec(reader.headers().unwrap()));
+impl Tab {
+    pub fn init(mut reader: Reader<File>, keys: &Vec<String>) -> Self {
+        let mut keys = keys;
+        let mut vec;
+        let header = reader.headers().unwrap();
+        if keys.is_empty() {
+            vec = Vec::with_capacity(header.len());
+            for h in header.iter() {
+                vec.push(String::from(h));
+            }
+            keys = &vec;
+        }
+        let cols: Rc<Vec<Col>> = Rc::from(Col::new_vec(header, keys));
         Tab {
             rows: Row::new_vec(&cols, reader),
             cols,

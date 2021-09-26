@@ -48,19 +48,23 @@ impl Diff {
         let mut ir: usize = 0;
         let mut rl;
         let mut rr;
+        let mut kl;
+        let mut kr;
         let mut d: Diff;
         let mut diffs = vec!();
         while il < sl && ir < sr {
             rl = &left.rows[il];
             rr = &right.rows[ir];
-            if rl == rr {
+            kl = rl.keys();
+            kr = rr.keys();
+            if kl == kr {
                 d = Diff::new_both(rl.clone(), rr.clone());
                 il += 1;
                 ir += 1;
-            } else if rl < rr {
+            } else if kl < kr {
                 d = Diff::new_left(rl.clone());
                 il += 1;
-            } else { // if rl > rr
+            } else { // if kl > kr
                 d = Diff::new_right(rr.clone());
                 ir += 1;
             }

@@ -1,42 +1,38 @@
 mod tab;
 mod diff;
 mod print;
+mod opts;
 
 use std::error::Error;
 use csv::Reader;
 use tab::Tab;
 use std::process::exit;
 use diff::Diff;
+use opts::Opts;
+use clap::Clap;
 
-fn example() -> Result<(), Box<dyn Error>> {
-    let args: Vec<_> = std::env::args().collect();
-    if args.len() != 3 {
-        eprintln!("usage: tabdiff [left] [right]");
-        exit(1);
-    }
-
-    let left_name = &args[1];
-    let right_name = &args[2];
-
-    let rdr = Reader::from_path(left_name)?;
-    let left = Tab::from(rdr);
-    let rdr = Reader::from_path(right_name)?;
-    let right = Tab::from(rdr);
+fn print_diff(opts: Opts) -> Result<(), Box<dyn Error>> {
+    let rdr = Reader::from_path(&opts.left)?;
+    let left = Tab::init(rdr, &opts.left_keys.keys);
+    let rdr = Reader::from_path(&opts.right)?;
+    let right = Tab::init(rdr, &opts.right_keys.keys);
 
     let diffs = Diff::create_diffs(left, right);
-    let mut table = prettytable::Table::new();
-    table.add_row(prettytable::Row::new(vec!(
-        prettytable::Cell::new(left_name.as_str()),
-        prettytable::Cell::new(right_name.as_str()),
+    let mut table = print::diffs_as_table(diffs, opts.color.into());
+    table.set_titles(prettytable::Row::new(vec!(
+        prettytable::Cell::new("Diff"),
+        prettytable::Cell::new(opts.left.as_str()),
+        prettytable::Cell::new(opts.right.as_str()),
     )));
-    print::diffs_as_table(diffs, &mut table);
     table.printstd();
     Ok(())
 }
 
 fn main() {
-    if let Err(err) = example() {
-        println!("error running example: {}", err);
+    let opts: Opts = Opts::parse();
+    console::set_colors_enabled(opts.color.into());
+    if let Err(err) = print_diff(opts) {
+        println!("error running print_diff: {}", err);
         exit(1);
     }
 }
