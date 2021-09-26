@@ -1,15 +1,17 @@
 # tabdiff
-Command line tool showing the row-by-row- field-by-field difference between two CSV files.
+Command line tool showing the row-by-row and field-by-field difference between two CSV files.
 
 ## Build
+Download the Rust build toolchain and build. 
 ```sh
-curl https://sh.rustup.rs -sSf | sh
-cargo build --release
+$ curl https://sh.rustup.rs -sSf | sh
+$ cargo build --release
 ```
 
 ## Run
+🌈 The console output is colorized.
 ```sh
-code/tabdiff/target/release/tabdiff  code/tabdiff/example/a.csv code/tabdiff/example/b.csv -l key -r key 
+$ target/release/tabdiff -l key -r key example/a.csv example/b.csv
 +-------+----------------------------+----------------------------+
 | Diff  | code/tabdiff/example/a.csv | code/tabdiff/example/b.csv |
 +=======+============================+============================+
