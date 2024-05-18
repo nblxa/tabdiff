@@ -9,7 +9,7 @@ use tab::Tab;
 use std::process::exit;
 use diff::Diff;
 use opts::Opts;
-use clap::Clap;
+use clap::Parser;
 
 fn print_diff(opts: Opts) -> Result<(), Box<dyn Error>> {
     let rdr = Reader::from_path(&opts.left)?;

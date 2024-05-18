@@ -1,11 +1,10 @@
 use std::str::{FromStr, ParseBoolError};
-use clap::{Clap, AppSettings};
+use clap::Parser;
 
 /// Compare two CSV files record by record, field by field, assuming that each of them has
 /// a set of key columns.
-#[derive(Clap)]
+#[derive(Parser, Debug)]
 #[clap(version = "1.0", author = "Pavel Mitrofanov <https://github.com/nblxa>")]
-#[clap(setting = AppSettings::ColoredHelp)]
 pub struct Opts {
     /// Left file
     pub left: String,
@@ -22,6 +21,7 @@ pub struct Opts {
     pub color: BoolDefaultTrue,
 }
 
+#[derive(Clone, Debug)]
 pub struct Keys {
     pub keys: Vec<String>,
 }
@@ -40,7 +40,7 @@ impl FromStr for Keys {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct BoolDefaultTrue {
     value: bool,
 }

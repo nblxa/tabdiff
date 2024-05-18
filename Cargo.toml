@@ -6,9 +6,9 @@ edition = "2018"
 [dependencies]
 similar = { version = "2", features = ["inline"] }
 csv = "1"
-prettytable-rs = "^0.8"
-console = "0.7"
-clap = "3.0.0-beta.4"
+prettytable-rs = "^0.10"
+console = "0.15"
+clap = { version = "4", features = ["derive"] }
 
 [profile.release]
 # Enable link-time optimization, eliminates more code and inlines across crate boundaries.
